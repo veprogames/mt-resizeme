@@ -34,11 +34,20 @@ ResizeMe.resize = function(player, size, absolute)
     props.eye_height = props.eye_height * factor
 
     local oldphysics = player:get_physics_override()
+    local new_jump_height = oldphysics.jump * factor
     player:set_physics_override({
         speed = oldphysics.speed * factor,
         jump = oldphysics.jump * factor,
         gravity = oldphysics.gravity * factor,
     })
+
+    local oldcol = props.collisionbox
+    props.collisionbox = scale_collision_box(oldcol, factor)
+
+    local oldsel = props.selectionbox
+    props.selectionbox = scale_collision_box(oldsel, factor)
+
+    props.stepheight = 0.01 + new_jump_height / 2
 
     meta:set_float("resizeme", size)
     player:set_properties(props)
