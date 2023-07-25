@@ -7,10 +7,10 @@ local function scale_collision_box(box, size)
     return box
 end
 
-local function get_player_size(player)
+function ResizeMe.get_size(player)
     local meta = player:get_meta()
-    if meta:contains("resizeme") then
-        return meta:get_float("resizeme")
+    if meta:contains("resizeme_size") then
+        return meta:get_float("resizeme_size")
     end
     return 1.0
 end
@@ -18,7 +18,7 @@ end
 ResizeMe.resize = function(player, size, absolute)
     local props = player:get_properties()
     local meta = player:get_meta()
-    local previous_size = get_player_size(player)
+    local previous_size = ResizeMe.get_size(player)
     local factor = size / previous_size
     if absolute then
         factor = size
@@ -49,26 +49,38 @@ ResizeMe.resize = function(player, size, absolute)
 
     props.stepheight = 0.01 + new_jump_height / 2
 
-    meta:set_float("resizeme", size)
+    meta:set_float("resizeme_size", size)
     player:set_properties(props)
 end
 
-minetest.register_chatcommand("ResizeMe", {
-    params = "size - float",
+minetest.register_privilege("resizeme_resize", {
+    give_to_singleplayer = false,
+    give_to_admin = true,
+})
+
+minetest.register_chatcommand("resizeme", {
+    privs = { resizeme_resize = true },
+    description = "Change your size",
+    params = "<size>",
     func = function (name, params)
         local size = tonumber(params)
         local player = minetest.get_player_by_name(name)
-        if player then
+        if player ~= nil and size ~= nil then
+            if size <= 0.0 then
+                minetest.chat_send_player(name, "size cannot be negative or 0")
+                return false
+            end
             ResizeMe.resize(player, size)
+            return true
         end
+        return false
     end
 })
 
 minetest.register_on_joinplayer(function(player, last_login)
-    if player then
-        print(get_player_size(player))
+    if player ~= nil then
         minetest.after(0, function ()
-            ResizeMe.resize(player, get_player_size(player), true)
+            ResizeMe.resize(player, ResizeMe.get_size(player), true)
         end)
     end
 end)
